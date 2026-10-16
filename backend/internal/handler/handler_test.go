@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"math"
@@ -8,7 +11,19 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/calculator"
 )
+
+// silenceLogs discards log output for the duration of the test, so expected
+// error logs do not look like failures, and restores the previous logger after.
+func silenceLogs(t *testing.T) {
+	t.Helper()
+
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+}
 
 func TestWriteJSON(t *testing.T) {
 	tests := []struct {
@@ -87,10 +102,7 @@ func TestWriteError(t *testing.T) {
 // protects against. The status line is already sent when encoding fails, so
 // the client sees the requested status with an empty body.
 func TestWriteJSON_EncodeFailure(t *testing.T) {
-	// The failure is logged; keep the test output clean and restore the logger after.
-	previous := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
-	t.Cleanup(func() { slog.SetDefault(previous) })
+	silenceLogs(t)
 
 	rec := httptest.NewRecorder()
 	writeJSON(rec, http.StatusOK, successBody{Result: math.NaN()})
@@ -101,5 +113,58 @@ func TestWriteJSON_EncodeFailure(t *testing.T) {
 
 	if rec.Body.Len() != 0 {
 		t.Errorf("writeJSON(NaN) body = %q, want empty", rec.Body.String())
+	}
+}
+
+func TestWriteOperationError(t *testing.T) {
+	silenceLogs(t)
+
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus int
+		wantMsg    string
+	}{
+		{name: "division by zero", err: calculator.ErrDivisionByZero, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrDivisionByZero.Error()},
+		{name: "negative sqrt", err: calculator.ErrNegativeSqrt, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrNegativeSqrt.Error()},
+		{name: "overflow", err: calculator.ErrOverflow, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrOverflow.Error()},
+		{name: "undefined", err: calculator.ErrUndefined, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrUndefined.Error()},
+		// errors.Is must see through wrapping; comparing with == would fall to the 500 here.
+		{name: "wrapped sentinel", err: fmt.Errorf("divide failed: %w", calculator.ErrDivisionByZero), wantStatus: http.StatusUnprocessableEntity, wantMsg: "divide failed: division by zero"},
+		// The original message ("boom") must never reach the client.
+		{name: "unknown error", err: errors.New("boom"), wantStatus: http.StatusInternalServerError, wantMsg: "internal error"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			writeOperationError(rec, tc.err)
+
+			if rec.Code != tc.wantStatus {
+				t.Errorf("writeOperationError(%v) status = %v, want %v", tc.err, rec.Code, tc.wantStatus)
+			}
+
+			var got errorBody
+			if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+				t.Fatalf("writeOperationError(%v) body is not valid JSON: %v", tc.err, err)
+			}
+			if got.Error != tc.wantMsg {
+				t.Errorf("writeOperationError(%v) message = %q, want %q", tc.err, got.Error, tc.wantMsg)
+			}
+		})
+	}
+}
+
+// TestOperationErrorsTable guards the table itself: every row must carry a real
+// error and a status in the 4xx range, so a typo cannot silently turn a domain
+// error into a 500 or a success.
+func TestOperationErrorsTable(t *testing.T) {
+	for _, row := range operationErrors {
+		if row.err == nil {
+			t.Error("operationErrors has a row with a nil error")
+		}
+		if row.status < 400 || row.status > 499 {
+			t.Errorf("operationErrors row for %v has status %v, want a 4xx code", row.err, row.status)
+		}
 	}
 }
