@@ -10,8 +10,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/calculator"
 )
 
 // maxBodyBytes is the largest request body we accept (1 MB). A request only
@@ -137,9 +135,3 @@ func describeDecodeError(err error) error {
 		return errors.New("invalid JSON body")
 	}
 }
-
-// Compile-time checks that the calculator functions fit the operation types.
-var (
-	_ BinaryOp = calculator.Add
-	_ UnaryOp  = calculator.Sqrt
-)
