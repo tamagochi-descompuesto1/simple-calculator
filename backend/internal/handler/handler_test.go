@@ -47,6 +47,41 @@ func TestWriteJSON(t *testing.T) {
 	}
 }
 
+func TestWriteError(t *testing.T) {
+	tests := []struct {
+		name   string
+		status int
+		msg    string
+		want   string
+	}{
+		{name: "bad request", status: http.StatusBadRequest, msg: "invalid JSON body", want: `{"error":"invalid JSON body"}`},
+		{name: "domain error", status: http.StatusUnprocessableEntity, msg: "division by zero", want: `{"error":"division by zero"}`},
+		{name: "internal error", status: http.StatusInternalServerError, msg: "internal error", want: `{"error":"internal error"}`},
+		// The encoder must escape quotes; building the JSON by hand would break here.
+		{name: "message with quotes", status: http.StatusBadRequest, msg: `field "a" is required`, want: `{"error":"field \"a\" is required"}`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			writeError(rec, tc.status, tc.msg)
+			got := strings.TrimSpace(rec.Body.String())
+
+			if rec.Code != tc.status {
+				t.Errorf("writeError(%v, %q) status = %v, want %v", tc.status, tc.msg, rec.Code, tc.status)
+			}
+
+			if contentType := rec.Header().Get("Content-Type"); contentType != "application/json" {
+				t.Errorf("writeError(%v, %q) Content-Type = %q, want %q", tc.status, tc.msg, contentType, "application/json")
+			}
+
+			if got != tc.want {
+				t.Errorf("writeError(%v, %q) body = %v, want %v", tc.status, tc.msg, got, tc.want)
+			}
+		})
+	}
+}
+
 // TestWriteJSON_EncodeFailure covers the case where the value cannot be
 // serialized. NaN is not valid JSON, which is what calculator.checkResult
 // protects against. The status line is already sent when encoding fails, so

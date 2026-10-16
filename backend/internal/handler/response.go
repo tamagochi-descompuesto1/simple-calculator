@@ -30,3 +30,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 		slog.Error("error serializing JSON", "error", err)
 	}
 }
+
+// writeError writes msg as a JSON error response with the given HTTP status code.
+// It is the only place that knows the {"error": "<message>"} shape, so changing
+// the error format only requires touching this function.
+func writeError(w http.ResponseWriter, status int, msg string) {
+	writeJSON(w, status, errorBody{Error: msg})
+}
