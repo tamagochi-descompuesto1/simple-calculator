@@ -168,3 +168,120 @@ func TestOperationErrorsTable(t *testing.T) {
 		}
 	}
 }
+
+// serve sends a POST request with the given body to h and returns the response.
+func serve(h http.Handler, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	return rec
+}
+
+func TestOperate(t *testing.T) {
+	silenceLogs(t)
+
+	failing := func(a, b float64) (float64, error) { return 0, errors.New("boom") }
+
+	tests := []struct {
+		name       string
+		op         BinaryOp
+		body       string
+		wantStatus int
+		wantBody   string
+	}{
+		// Successful requests.
+		{name: "success", op: calculator.Add, body: `{"a":6,"b":3}`, wantStatus: http.StatusOK, wantBody: `{"result":9}`},
+		{name: "decimal success", op: calculator.Add, body: `{"a":0.5,"b":0.25}`, wantStatus: http.StatusOK, wantBody: `{"result":0.75}`},
+		{name: "result of zero", op: calculator.Add, body: `{"a":5,"b":-5}`, wantStatus: http.StatusOK, wantBody: `{"result":0}`},
+		{name: "operand zero is not missing", op: calculator.Add, body: `{"a":5,"b":0}`, wantStatus: http.StatusOK, wantBody: `{"result":5}`},
+
+		// The operation fails.
+		{name: "domain error", op: calculator.Divide, body: `{"a":5,"b":0}`, wantStatus: http.StatusUnprocessableEntity, wantBody: `{"error":"division by zero"}`},
+		{name: "unexpected error", op: failing, body: `{"a":1,"b":2}`, wantStatus: http.StatusInternalServerError, wantBody: `{"error":"internal error"}`},
+
+		// Malformed requests never reach the operation.
+		{name: "empty body", op: calculator.Add, body: ``, wantStatus: http.StatusBadRequest, wantBody: `{"error":"request body is empty"}`},
+		{name: "invalid json", op: calculator.Add, body: `{"a":`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"invalid JSON body"}`},
+		{name: "not json at all", op: calculator.Add, body: `hello`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"invalid JSON body"}`},
+		{name: "body is an array", op: calculator.Add, body: `[1,2]`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"request body must be a JSON object"}`},
+		{name: "body is null", op: calculator.Add, body: `null`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: a"}`},
+		{name: "missing a", op: calculator.Add, body: `{"b":3}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: a"}`},
+		{name: "missing b", op: calculator.Add, body: `{"a":3}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: b"}`},
+		{name: "unknown field", op: calculator.Add, body: `{"a":1,"b":2,"c":3}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"unknown field \"c\""}`},
+		// encoding/json matches field names ignoring case; this documents that behavior.
+		{name: "field names ignore case", op: calculator.Add, body: `{"A":1,"B":2}`, wantStatus: http.StatusOK, wantBody: `{"result":3}`},
+		{name: "string instead of number", op: calculator.Add, body: `{"a":"hello","b":2}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"field a must be a valid number"}`},
+		{name: "number as string", op: calculator.Add, body: `{"a":"5","b":2}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"field a must be a valid number"}`},
+		{name: "number out of range", op: calculator.Add, body: `{"a":1e999,"b":1}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"field a must be a valid number"}`},
+		{name: "data after the object", op: calculator.Add, body: `{"a":1,"b":2} garbage`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"request body must contain a single JSON object"}`},
+		{name: "two objects", op: calculator.Add, body: `{"a":1,"b":2}{"a":3,"b":4}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"request body must contain a single JSON object"}`},
+		{name: "body too large", op: calculator.Add, body: strings.Repeat(" ", maxBodyBytes+1) + `{"a":1,"b":2}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"request body too large"}`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := serve(Operate(tc.op), tc.body)
+			got := strings.TrimSpace(rec.Body.String())
+
+			if rec.Code != tc.wantStatus {
+				t.Errorf("Operate body %q status = %v, want %v", abbreviate(tc.body), rec.Code, tc.wantStatus)
+			}
+
+			if got != tc.wantBody {
+				t.Errorf("Operate body %q response = %v, want %v", abbreviate(tc.body), got, tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestOperateUnary(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		wantStatus int
+		wantBody   string
+	}{
+		{name: "success", body: `{"a":9}`, wantStatus: http.StatusOK, wantBody: `{"result":3}`},
+		{name: "result of zero", body: `{"a":0}`, wantStatus: http.StatusOK, wantBody: `{"result":0}`},
+		{name: "domain error", body: `{"a":-1}`, wantStatus: http.StatusUnprocessableEntity, wantBody: `{"error":"square root of a negative number"}`},
+		{name: "missing a", body: `{}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: a"}`},
+		{name: "second operand is rejected", body: `{"a":4,"b":1}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"unknown field \"b\""}`},
+		{name: "invalid json", body: `{"a":`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"invalid JSON body"}`},
+		{name: "string instead of number", body: `{"a":"nine"}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"field a must be a valid number"}`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := serve(OperateUnary(calculator.Sqrt), tc.body)
+			got := strings.TrimSpace(rec.Body.String())
+
+			if rec.Code != tc.wantStatus {
+				t.Errorf("OperateUnary body %q status = %v, want %v", tc.body, rec.Code, tc.wantStatus)
+			}
+
+			if got != tc.wantBody {
+				t.Errorf("OperateUnary body %q response = %v, want %v", tc.body, got, tc.wantBody)
+			}
+		})
+	}
+}
+
+// TestOperate_UsesOperands checks that a and b reach the operation in the right
+// order, which a commutative operation like Add cannot show.
+func TestOperate_UsesOperands(t *testing.T) {
+	rec := serve(Operate(calculator.Subtract), `{"a":10,"b":3}`)
+
+	if got := strings.TrimSpace(rec.Body.String()); got != `{"result":7}` {
+		t.Errorf("Operate(Subtract) with a=10, b=3 response = %v, want %v", got, `{"result":7}`)
+	}
+}
+
+// abbreviate shortens very long test bodies so failure messages stay readable.
+func abbreviate(s string) string {
+	if len(s) > 40 {
+		return s[:40] + "..."
+	}
+
+	return s
+}
