@@ -20,6 +20,11 @@ type errorBody struct {
 	Error string `json:"error"`
 }
 
+// healthBody is the JSON body of the health check: {"status": "ok"}.
+type healthBody struct {
+	Status string `json:"status"`
+}
+
 // writeJSON writes v as a JSON response with the given HTTP status code.
 // The Content-Type header must be set before WriteHeader, because headers
 // are ignored once the status line has been sent.
