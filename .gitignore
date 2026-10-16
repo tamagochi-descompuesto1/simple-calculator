@@ -31,3 +31,10 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Frontend (Node / Vite / Vitest)
+node_modules/
+dist/
+coverage/
+*.local
+npm-debug.log*
