@@ -1,0 +1,49 @@
+name: ci
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    backend:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: backend
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7
+
+            - name: Setup Go environment
+              uses: actions/setup-go@v7
+              with:
+                go-version-file: backend/go.mod
+                cache: false
+
+            - name: Verify Go file format
+              run: test -z "$(gofmt -l .)"
+
+            - name: Static Go file analysis
+              run: go vet ./...
+
+            - name: Unit testing of modules
+              run: go test ./... -race -coverprofile=coverage.out
+
+            - name: Coverage report
+              run: |
+                echo "## Backend coverage" >> "$GITHUB_STEP_SUMMARY"
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                go tool cover -func=coverage.out >> "$GITHUB_STEP_SUMMARY"
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Upload coverage report
+              uses: actions/upload-artifact@v7
+              with:
+                path: backend/coverage.out
+                name: backend-coverage
+                if-no-files-found: error
