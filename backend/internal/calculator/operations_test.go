@@ -31,7 +31,7 @@ func TestAdd(t *testing.T) {
 		want    float64
 		wantErr error
 	}{
-		{name: "positive whole numbers", a: 50, b: 34, want: 85},
+		{name: "positive whole numbers", a: 50, b: 34, want: 84},
 		{name: "negative whole numbers", a: -68, b: -32, want: -100},
 		{name: "mixed signs", a: 50, b: -80, want: -30},
 		{name: "positive decimals", a: 54.2, b: 31.6, want: 85.8},
