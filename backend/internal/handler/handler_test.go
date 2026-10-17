@@ -181,7 +181,7 @@ func serve(h http.Handler, body string) *httptest.ResponseRecorder {
 func TestOperate(t *testing.T) {
 	silenceLogs(t)
 
-	failing := func(a, b float64) (float64, error) { return 0, errors.New("boom") }
+	failing := func(_, _ float64) (float64, error) { return 0, errors.New("boom") }
 
 	tests := []struct {
 		name       string

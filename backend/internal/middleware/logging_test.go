@@ -35,7 +35,7 @@ func TestLogging(t *testing.T) {
 			name:   "explicit status",
 			method: http.MethodPost,
 			target: "/divide",
-			handler: func(w http.ResponseWriter, r *http.Request) {
+			handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 			},
 			want: []string{"msg=request", "method=POST", "path=/divide", "status=422", "duration="},
@@ -44,8 +44,8 @@ func TestLogging(t *testing.T) {
 			name:   "body without explicit status defaults to 200",
 			method: http.MethodGet,
 			target: "/health",
-			handler: func(w http.ResponseWriter, r *http.Request) {
-				io.WriteString(w, "ok")
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = io.WriteString(w, "ok")
 			},
 			want: []string{"method=GET", "path=/health", "status=200"},
 		},
@@ -53,7 +53,7 @@ func TestLogging(t *testing.T) {
 			name:   "first status wins",
 			method: http.MethodPost,
 			target: "/add",
-			handler: func(w http.ResponseWriter, r *http.Request) {
+			handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 				w.WriteHeader(http.StatusInternalServerError)
 			},
@@ -83,7 +83,7 @@ func TestLogging(t *testing.T) {
 func TestLogging_OmitsQueryString(t *testing.T) {
 	logs := captureLogs(t)
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {})
 	req := httptest.NewRequest(http.MethodGet, "/health?token=secret", nil)
 	Logging(handler).ServeHTTP(httptest.NewRecorder(), req)
 
@@ -97,10 +97,10 @@ func TestLogging_OmitsQueryString(t *testing.T) {
 func TestLogging_PassesResponseThrough(t *testing.T) {
 	captureLogs(t)
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("X-Test", "kept")
 		w.WriteHeader(http.StatusTeapot)
-		io.WriteString(w, "tea")
+		_, _ = io.WriteString(w, "tea")
 	})
 
 	rec := httptest.NewRecorder()

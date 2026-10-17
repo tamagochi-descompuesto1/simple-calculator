@@ -16,9 +16,9 @@ type trackedHandler struct {
 	called bool
 }
 
-func (h *trackedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *trackedHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	h.called = true
-	io.WriteString(w, "from handler")
+	_, _ = io.WriteString(w, "from handler")
 }
 
 func newPreflight() *http.Request {

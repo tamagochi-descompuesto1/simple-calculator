@@ -1,3 +1,4 @@
+// Command server runs the calculator HTTP API.
 package main
 
 import (
@@ -52,7 +53,7 @@ func initializeServer(server *http.Server, serverChannel chan error) {
 // CORS sits just outside the router so it can answer preflight requests (which
 // the router would reject with 405) before they reach it.
 func newHandler(allowedOrigin string) http.Handler {
-	var h http.Handler = handler.NewRouter()
+	h := handler.NewRouter()
 	h = middleware.CORS(allowedOrigin)(h)
 	h = middleware.Recover(h)
 	h = middleware.Logging(h)

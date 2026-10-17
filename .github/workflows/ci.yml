@@ -25,11 +25,12 @@ jobs:
                 go-version-file: backend/go.mod
                 cache: false
 
-            - name: Verify Go file format
-              run: test -z "$(gofmt -l .)"
-
-            - name: Static Go file analysis
-              run: go vet ./...
+            # Runs gofmt, go vet and the linters listed in backend/.golangci.yml.
+            - name: Lint
+              uses: golangci/golangci-lint-action@v9
+              with:
+                version: v2.14.0
+                working-directory: backend
 
             - name: Unit testing of modules
               run: go test ./... -race -coverprofile=coverage.out
