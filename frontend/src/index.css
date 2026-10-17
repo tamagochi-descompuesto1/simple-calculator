@@ -1,1 +1,75 @@
 @import 'tailwindcss';
+
+/* Follow the system color scheme, unless data-theme forces one. */
+:root {
+  color-scheme: light dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root {
+  /* Brand colors: the same in both themes. */
+  --brand-light: #5b8def;
+  --brand: #2a5cdb;
+  --brand-dark: #1a3f9e;
+  --danger: #ff6b4a;
+  --danger-dark: #e14b2a;
+  --success: #3ddc84;
+
+  /* Surfaces and text: light-dark(value in light theme, value in dark theme). */
+  --cream: light-dark(#f5f3ee, #10112b);
+  --cream-dim: light-dark(#eae6db, #171935);
+  --paper: light-dark(#ffffff, #1b1d3b);
+  --ink: light-dark(#1a1b2e, #f1f1fa);
+  --ink-soft: light-dark(#3d3e56, #c6c7de);
+  --ink-faint: light-dark(#63647e, #9a9bc0);
+  --line: light-dark(#a99f80, #4a4c7c);
+  --line-strong: light-dark(#1a1b2e, #06070f);
+
+  /* Pieces of the bevel and window shadows. */
+  --bevel-hi: light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.18));
+  --bevel-lo: light-dark(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.6));
+  --window-shadow-color: light-dark(rgb(26 27 46 / 0.3), rgb(0 0 0 / 0.55));
+}
+
+/* Makes the tokens available as Tailwind classes (bg-paper, text-ink, ...). */
+@theme inline {
+  --color-brand-light: var(--brand-light);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-danger: var(--danger);
+  --color-danger-dark: var(--danger-dark);
+  --color-success: var(--success);
+  --color-cream: var(--cream);
+  --color-cream-dim: var(--cream-dim);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --shadow-bevel-raised:
+    inset 1.5px 1.5px 0 var(--bevel-hi), inset -1.5px -1.5px 0 var(--bevel-lo);
+  --shadow-bevel-sunken:
+    inset 1.5px 1.5px 0 var(--bevel-lo), inset -1.5px -1.5px 0 var(--bevel-hi);
+  --shadow-window: 4px 4px 0 var(--window-shadow-color);
+
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+
+  --font-head: 'Space Grotesk Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-cream text-ink;
+  }
+}
