@@ -2,9 +2,9 @@
 // Vite only exposes variables whose name starts with VITE_, and it embeds their
 // values at build time. See .env.example.
 interface ImportMetaEnv {
-    readonly VITE_API_URL?: string;
+  readonly VITE_API_URL?: string
 }
 
 interface ImportMeta {
-    readonly env: ImportMetaEnv;
+  readonly env: ImportMetaEnv
 }
