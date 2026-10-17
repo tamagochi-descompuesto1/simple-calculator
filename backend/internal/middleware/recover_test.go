@@ -32,7 +32,7 @@ func TestRecover_Panic(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			panicking := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			panicking := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 				panic(tc.panicValue)
 			})
 
@@ -58,10 +58,10 @@ func TestRecover_Panic(t *testing.T) {
 }
 
 func TestRecover_NoPanic(t *testing.T) {
-	healthy := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	healthy := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("X-Test", "kept")
 		w.WriteHeader(http.StatusCreated)
-		io.WriteString(w, "hello")
+		_, _ = io.WriteString(w, "hello")
 	})
 
 	rec := httptest.NewRecorder()
@@ -88,7 +88,7 @@ func TestRecover_DoesNotLeakPanicValue(t *testing.T) {
 	silenceLogs(t)
 
 	secret := "database password is hunter2"
-	panicking := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	panicking := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		panic(secret)
 	})
 

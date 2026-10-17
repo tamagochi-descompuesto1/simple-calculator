@@ -27,6 +27,6 @@ func NewRouter() http.Handler {
 
 // health reports that the server is up. It takes no input and has no state, so
 // it is a plain handler function instead of one built by a constructor.
-func health(w http.ResponseWriter, r *http.Request) {
+func health(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, healthBody{Status: "ok"})
 }
