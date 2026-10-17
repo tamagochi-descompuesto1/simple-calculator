@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/handler"
+	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/middleware"
 )
 
 // shutdownTimeout is how long in-flight requests get to finish once the server
@@ -38,6 +39,27 @@ func initializeServer(server *http.Server, serverChannel chan error) {
 	serverChannel <- err
 }
 
+// newHandler builds the full HTTP handler: the API router wrapped in the
+// middleware. It lives in its own function so tests can exercise the exact
+// same chain that the server runs.
+//
+// Each step wraps the previous one, so the last one added is the outermost and
+// sees the request first. The resulting order of a request is:
+//
+//	Logging -> Recover -> CORS -> router
+//
+// Logging is outermost so it also records the 500 that Recover produces, and
+// CORS sits just outside the router so it can answer preflight requests (which
+// the router would reject with 405) before they reach it.
+func newHandler(allowedOrigin string) http.Handler {
+	var h http.Handler = handler.NewRouter()
+	h = middleware.CORS(allowedOrigin)(h)
+	h = middleware.Recover(h)
+	h = middleware.Logging(h)
+
+	return h
+}
+
 // main runs the server and turns a failure into a non-zero exit code. It is
 // kept this small on purpose: os.Exit skips deferred calls, so all the work
 // (and its defers) lives in run, which returns before main exits.
@@ -55,6 +77,10 @@ func main() {
 func run() error {
 	port := getenv("PORT", "8080")
 
+	// The origin of the frontend, which the browser is allowed to call the API
+	// from. The default is the address of the Vite development server.
+	allowedOrigin := getenv("CORS_ALLOWED_ORIGIN", "http://localhost:5173")
+
 	// ctx is cancelled when the process receives one of the stop signals.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -67,7 +93,7 @@ func run() error {
 		// ":8080" (no host) listens on every network interface, which is
 		// required for the server to be reachable from outside a container.
 		Addr:    ":" + port,
-		Handler: handler.NewRouter(),
+		Handler: newHandler(allowedOrigin),
 
 		// Timeouts stop slow or stalled clients from holding connections open
 		// forever. Requests and responses here are tiny, so these are generous.
@@ -78,7 +104,7 @@ func run() error {
 		MaxHeaderBytes:    1 << 20,           // 1 MB cap on the request headers
 	}
 
-	slog.Info("server starting", "port", port)
+	slog.Info("server starting", "port", port, "cors_origin", allowedOrigin)
 	go initializeServer(server, serverChannel)
 
 	// Wait for whichever happens first: the server fails, or we are told to stop.
