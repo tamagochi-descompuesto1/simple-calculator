@@ -1,50 +1,88 @@
 name: ci
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    backend:
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: backend
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v7
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-            - name: Setup Go environment
-              uses: actions/setup-go@v7
-              with:
-                go-version-file: backend/go.mod
-                cache: false
+      - name: Setup Go environment
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: backend/go.mod
+          cache: false
 
-            # Runs gofmt, go vet and the linters listed in backend/.golangci.yml.
-            - name: Lint
-              uses: golangci/golangci-lint-action@v9
-              with:
-                version: v2.14.0
-                working-directory: backend
+      # Runs gofmt, go vet and the linters listed in backend/.golangci.yml.
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.14.0
+          working-directory: backend
 
-            - name: Unit testing of modules
-              run: go test ./... -race -coverprofile=coverage.out
+      - name: Unit testing of modules
+        run: go test ./... -race -coverprofile=coverage.out
 
-            - name: Coverage report
-              run: |
-                echo "## Backend coverage" >> "$GITHUB_STEP_SUMMARY"
-                echo '```' >> "$GITHUB_STEP_SUMMARY"
-                go tool cover -func=coverage.out >> "$GITHUB_STEP_SUMMARY"
-                echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Coverage report
+        run: |
+          echo "## Backend coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          go tool cover -func=coverage.out >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-            - name: Upload coverage report
-              uses: actions/upload-artifact@v7
-              with:
-                path: backend/coverage.out
-                name: backend-coverage
-                if-no-files-found: error
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          path: backend/coverage.out
+          name: backend-coverage
+          if-no-files-found: error
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Node and cache dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install lockfile dependencies
+        run: npm ci
+
+      - name: Lint files
+        run: npm run lint
+
+      - name: Check code formatting
+        run: npm run format:check
+
+      - name: Build app
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          path: frontend/coverage
+          name: frontend-coverage
+          if-no-files-found: error
