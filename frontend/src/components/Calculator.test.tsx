@@ -69,6 +69,36 @@ describe('Calculator', () => {
       expect(calculateButton()).toBeDisabled()
     })
 
+    // A calculation is read in this order: number, operation, number.
+    it('lays out the first number, the operation and the second number in order', () => {
+      render(<Calculator />)
+
+      const first = screen.getByLabelText('First number')
+      const operation = screen.getByRole('group', { name: 'Operation' })
+      const second = screen.getByLabelText('Second number')
+
+      expect(first.compareDocumentPosition(operation)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+      expect(operation.compareDocumentPosition(second)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+    })
+
+    // Operations whose numbers are not interchangeable name them by meaning.
+    it.each([
+      ['Power', 'Base', 'Exponent'],
+      ['Percentage', 'Amount', 'Percent'],
+    ])('labels the fields of %s as %s and %s', async (name, first, second) => {
+      const user = userEvent.setup()
+      render(<Calculator />)
+
+      await selectOperation(user, name)
+
+      expect(screen.getByLabelText(first)).toBeInTheDocument()
+      expect(screen.getByLabelText(second)).toBeInTheDocument()
+    })
+
     it('accepts a decimal point while the number is being typed', async () => {
       const user = userEvent.setup()
       render(<Calculator />)
@@ -148,8 +178,8 @@ describe('Calculator', () => {
       render(<Calculator />)
 
       await selectOperation(user, 'Percentage')
-      await typeNumber(user, 'First number', '200')
-      await typeNumber(user, 'Second number', '15')
+      await typeNumber(user, 'Amount', '200')
+      await typeNumber(user, 'Percent', '15')
       await user.click(calculateButton())
 
       expect(await screen.findByRole('status')).toHaveTextContent(

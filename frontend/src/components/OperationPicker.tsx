@@ -12,7 +12,7 @@ export function OperationPicker({ value, onChange }: OperationPickerProps) {
   return (
     <fieldset>
       <legend className="sr-only">Operation</legend>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2 md:grid-cols-7">
         {OPERATIONS.map((operation) => (
           <label key={operation.id}>
             <input

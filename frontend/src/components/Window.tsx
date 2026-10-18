@@ -10,7 +10,7 @@ export function Window({ title, actions, children }: WindowProps) {
   return (
     <section
       aria-label={title}
-      className="w-full max-w-md rounded-lg border-2 border-line-strong bg-paper shadow-window"
+      className="w-full max-w-md rounded-lg border-2 border-line-strong bg-paper shadow-window md:max-w-2xl"
     >
       <div className="flex items-center justify-between gap-3 border-b-2 border-line-strong bg-linear-to-b from-brand-light to-brand px-3 py-1.5 font-mono text-sm text-white">
         <h1>{title}</h1>
