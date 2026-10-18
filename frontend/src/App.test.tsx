@@ -22,6 +22,15 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the calculator inside the window', () => {
+    render(<App />)
+
+    expect(screen.getByRole('group', { name: 'Operation' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Calculate' }),
+    ).toBeInTheDocument()
+  })
+
   it('starts with the system theme', () => {
     render(<App />)
 
