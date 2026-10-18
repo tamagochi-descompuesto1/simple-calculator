@@ -86,3 +86,37 @@ jobs:
           path: frontend/coverage
           name: frontend-coverage
           if-no-files-found: error
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Start docker
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      - name: Connection verification
+        run: |
+          # The page is served
+          curl --fail --silent --show-error --output /dev/null http://localhost:3000/
+
+          # The API is alive
+          curl --fail --silent --show-error http://localhost:8080/health
+
+          # A real calculation, sent the way the browser sends it
+          curl --fail --silent --show-error -X POST http://localhost:8080/add \
+            -H 'Origin: http://localhost:3000' \
+            -H 'Content-Type: application/json' \
+            -d '{"a":6,"b":3}' | grep -q '"result":9'
+
+          # The CORS preflight allows the frontend's origin
+          curl --fail --silent --show-error --include -X OPTIONS http://localhost:8080/add \
+            -H 'Origin: http://localhost:3000' \
+            -H 'Access-Control-Request-Method: POST' \
+            -H 'Access-Control-Request-Headers: Content-Type' \
+            | grep -qi '^access-control-allow-origin: http://localhost:3000'
+
+      - name: Show container logs
+        if: failure()
+        run: docker compose logs
