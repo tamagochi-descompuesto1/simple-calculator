@@ -122,17 +122,19 @@ export function Calculator() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <OperationPicker value={operationId} onChange={handleOperationChange} />
-
+      {/* Number, operation, number: the order a calculation is written in. */}
       <NumberField
-        label={operation.unary ? 'Number' : 'First number'}
+        label={operation.fields.a}
         value={a}
         onChange={handleAChange}
         error={errorA}
       />
+
+      <OperationPicker value={operationId} onChange={handleOperationChange} />
+
       {!operation.unary && (
         <NumberField
-          label="Second number"
+          label={operation.fields.b}
           value={b}
           onChange={handleBChange}
           error={errorB}
@@ -150,7 +152,7 @@ export function Calculator() {
       {outcome?.kind === 'result' && (
         <p
           role="status"
-          className="rounded-sm border border-line bg-cream-dim px-3 py-2 text-right font-mono text-2xl break-all text-ink shadow-bevel-sunken"
+          className="rounded-sm border border-line bg-cream-dim px-3 py-2 text-right font-mono text-2xl wrap-break-word text-ink shadow-bevel-sunken"
         >
           {outcome.text}
         </p>
