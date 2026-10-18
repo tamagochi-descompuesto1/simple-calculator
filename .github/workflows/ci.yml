@@ -108,7 +108,7 @@ jobs:
           curl --fail --silent --show-error -X POST http://localhost:8080/add \
             -H 'Origin: http://localhost:3000' \
             -H 'Content-Type: application/json' \
-            -d '{"a":6,"b":3}' | grep -q '"result":10'
+            -d '{"a":6,"b":3}' | grep -q '"result":9'
 
           # The CORS preflight allows the frontend's origin
           curl --fail --silent --show-error --include -X OPTIONS http://localhost:8080/add \
