@@ -8,7 +8,7 @@ services:
     environment:
       # The page is served from this address, and the browser only lets it call
       # the API if the API allows that origin.
-      CORS_ALLOWED_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
+      CORS_ALLOWED_ORIGIN: http://localhost:3001
 
   frontend:
     build:
