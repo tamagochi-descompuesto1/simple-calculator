@@ -1,5 +1,20 @@
+import { ThemeToggle } from './components/ThemeToggle'
+import { Window } from './components/Window'
+import { useTheme } from './hooks/useTheme'
+
 function App() {
-  return <h1 className="text-3xl font-bold text-blue-600">Hello World!</h1>
+  const { theme, toggleTheme } = useTheme()
+
+  return (
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <Window
+        title="calculator.exe"
+        actions={<ThemeToggle theme={theme} onToggle={toggleTheme} />}
+      >
+        <p className="text-ink-soft">The calculator is coming soon.</p>
+      </Window>
+    </main>
+  )
 }
 
 export default App

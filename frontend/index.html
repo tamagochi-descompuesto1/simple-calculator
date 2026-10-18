@@ -5,6 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simple Calculator</title>
+
+    <script>
+      // Applies the saved theme before the page is first painted, so a user who
+      // chose a theme different from their system's does not see a flash of the
+      // wrong one while React loads. Keep the key and values in sync with
+      // src/hooks/useTheme.ts.
+      try {
+        const theme = localStorage.getItem('theme')
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme
+        }
+      } catch {
+        // Storage may be blocked; the page then follows the system theme.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
