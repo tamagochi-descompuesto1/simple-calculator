@@ -1,3 +1,4 @@
+import { Calculator } from './components/Calculator'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Window } from './components/Window'
 import { useTheme } from './hooks/useTheme'
@@ -11,7 +12,7 @@ function App() {
         title="calculator.exe"
         actions={<ThemeToggle theme={theme} onToggle={toggleTheme} />}
       >
-        <p className="text-ink-soft">The calculator is coming soon.</p>
+        <Calculator />
       </Window>
     </main>
   )
