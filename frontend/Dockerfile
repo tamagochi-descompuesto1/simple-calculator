@@ -16,7 +16,7 @@ COPY . .
 # (for example http://localhost:8080), not a name only other containers know.
 ARG VITE_API_URL=http://localhost:8080
 ENV VITE_API_URL=$VITE_API_URL
-RUN npm run build
+RUN npm run buidl
 
 # Stage 2: the image that runs. nginx serves the built files; no Node, no source
 # code. This nginx variant runs as a non-root user and listens on port 8080.
