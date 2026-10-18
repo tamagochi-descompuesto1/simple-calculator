@@ -1,0 +1,11 @@
+# Files that must not be copied into the image: local artifacts, installed
+# dependencies (npm ci installs them again), and local configuration that would
+# otherwise override the build argument.
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
