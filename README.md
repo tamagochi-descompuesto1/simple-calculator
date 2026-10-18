@@ -129,7 +129,5 @@ parallel on every pull request:
   deployment: it is meant to be run locally.
 - The theme follows the system only when the page loads.
 
-## How this was built
 
-I built this with Claude Code as a pair-programming partner. The prompts I used
-are in [`PROMPTS.md`](PROMPTS.md).
+| Claude Code was used as a pair-programming partner. More information in [`PROMPTS.md`](PROMPTS.md).
