@@ -124,6 +124,28 @@ and icons are hidden from screen readers.
 (Space Grotesk, Inter and JetBrains Mono) are bundled with the app through
 `@fontsource` packages, so it does not depend on an external font service.
 
+## Docker
+
+The [`Dockerfile`](Dockerfile) has two stages: a Node image installs the
+dependencies with `npm ci` and builds the app, and an nginx image serves only the
+built files. The final image runs as a non-root user, listens on port 8080 and has
+a health check.
+
+The easiest way to run it together with the backend is Compose from the
+repository root (`docker compose up --build`, then open <http://localhost:3000>).
+To build and run this image alone:
+
+```bash
+docker build --build-arg VITE_API_URL=http://localhost:8080 -t calculator-frontend ./frontend
+docker run --rm -p 3000:8080 calculator-frontend
+```
+
+`VITE_API_URL` is a build argument, not a runtime setting: it is embedded in the
+JavaScript when the image is built (see Configuration). It must be an address the
+user's **browser** can reach, such as `http://localhost:8080`, and not a name that
+only other containers know, such as `http://backend:8080`, because it is the
+browser that calls the API.
+
 ## Testing
 
 ```bash
