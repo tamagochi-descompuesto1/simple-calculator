@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTheme, type Theme } from './useTheme'
 
-// Makes the system (the prefers-color-scheme media query) report the given theme.
+// Makes the system report the given theme.
 function mockSystemTheme(theme: Theme) {
   vi.stubGlobal(
     'matchMedia',
@@ -13,8 +13,7 @@ function mockSystemTheme(theme: Theme) {
   )
 }
 
-// Every test starts with an empty storage and no theme applied to the page, so
-// the tests do not depend on each other.
+// Each test starts with an empty storage and no theme applied.
 beforeEach(() => {
   localStorage.clear()
 })
@@ -58,8 +57,8 @@ describe('useTheme', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  // A theme in storage must mean "the user chose this". If loading the page
-  // saved the system theme, the user would stop following their system.
+  // A stored theme must mean "the user chose this"; otherwise the user would
+  // stop following their system.
   it('does not store anything until the user chooses', () => {
     mockSystemTheme('dark')
 
@@ -75,7 +74,7 @@ describe('useTheme', () => {
 
     const { result } = renderHook(() => useTheme())
 
-    // act() makes React finish updating before the checks below run.
+    // act() lets React finish updating before the checks.
     act(() => result.current.toggleTheme())
 
     expect(result.current.theme).toBe('dark')
@@ -89,10 +88,8 @@ describe('useTheme', () => {
     expect(localStorage.getItem('theme')).toBe('light')
   })
 
-  // Simulates a browser that blocks localStorage (for example in private mode):
-  // reading and writing both throw. The spies stay active for the whole test, so
-  // it cannot read localStorage itself to check what was stored. The hook must
-  // fall back to the system theme and still be able to toggle.
+  // A browser that blocks localStorage: reads and writes throw. The spies stay
+  // active for the whole test, so it cannot inspect localStorage itself.
   it('works when the storage is unavailable', () => {
     mockSystemTheme('light')
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {

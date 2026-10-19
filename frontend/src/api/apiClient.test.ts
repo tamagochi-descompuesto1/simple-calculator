@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, calculate } from './apiClient'
 
-// Builds a response like the one fetch gives back for a JSON API.
 function jsonResponse(body: unknown, status: number = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -9,16 +8,14 @@ function jsonResponse(body: unknown, status: number = 200): Response {
   })
 }
 
-// Replaces the global fetch with a fake that answers with createResponse().
-// It takes a function and not a Response because a body can be read only once:
-// every call needs a fresh response.
+// Replaces fetch with a fake. It takes a function because a response body can be
+// read only once, so every call needs a fresh one.
 function mockFetch(createResponse: () => Response) {
   const fetchMock = vi.fn(async () => createResponse())
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
 
-// Put the real fetch back so one test cannot affect the next.
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -84,7 +81,7 @@ describe('calculate', () => {
   })
 
   it('returns error on no connection', async () => {
-    // fetch rejects (instead of returning a response) when it cannot reach the server.
+    // fetch rejects when it cannot reach the server.
     vi.stubGlobal(
       'fetch',
       vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
@@ -99,8 +96,7 @@ describe('calculate', () => {
     await expect(promise).rejects.toHaveProperty('status', undefined)
   })
 
-  // Each row is one test; the first column only names it. The server answered
-  // 200 but the body is not {"result": <number>}.
+  // The server answered 200 but the body is not {"result": <number>}.
   it.each([
     ['an empty object', {}],
     ['a result that is not a number', { result: '9' }],

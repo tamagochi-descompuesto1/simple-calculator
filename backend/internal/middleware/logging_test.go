@@ -10,8 +10,7 @@ import (
 	"testing"
 )
 
-// captureLogs sends log output to the returned buffer for the duration of the
-// test, and restores the previous logger after.
+// captureLogs sends log output to the returned buffer for the test.
 func captureLogs(t *testing.T) *bytes.Buffer {
 	t.Helper()
 
@@ -78,8 +77,7 @@ func TestLogging(t *testing.T) {
 	}
 }
 
-// TestLogging_OmitsQueryString checks that query parameters, which may carry
-// sensitive data, are not written to the log.
+// TestLogging_OmitsQueryString checks that query parameters are not logged.
 func TestLogging_OmitsQueryString(t *testing.T) {
 	logs := captureLogs(t)
 
@@ -92,8 +90,7 @@ func TestLogging_OmitsQueryString(t *testing.T) {
 	}
 }
 
-// TestLogging_PassesResponseThrough checks that logging does not alter what
-// the client receives.
+// TestLogging_PassesResponseThrough checks that logging does not alter the response.
 func TestLogging_PassesResponseThrough(t *testing.T) {
 	captureLogs(t)
 

@@ -1,21 +1,20 @@
 # Runs the whole app: docker compose up --build
-# The ports can be changed with BACKEND_PORT and FRONTEND_PORT (see .env.example).
+# Change the ports with BACKEND_PORT and FRONTEND_PORT (see .env.example).
 services:
   backend:
     build: ./backend
     ports:
-      - '${BACKEND_PORT:-8080}:8080'
+      - "${BACKEND_PORT:-8080}:8080"
     environment:
-      # The page is served from this address, and the browser only lets it call
-      # the API if the API allows that origin.
+      # The browser only lets the page call the API if the API allows its origin.
       CORS_ALLOWED_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
 
   frontend:
     build:
       context: ./frontend
       args:
-        # The browser, not the frontend container, calls the API, so this is the
-        # address the backend is published on the host, not "http://backend:8080".
+        # The browser calls the API, so this is the host address, not
+        # "http://backend:8080".
         VITE_API_URL: http://localhost:${BACKEND_PORT:-8080}
     ports:
-      - '${FRONTEND_PORT:-3000}:8080'
+      - "${FRONTEND_PORT:-3000}:8080"

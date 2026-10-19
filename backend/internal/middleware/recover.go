@@ -1,5 +1,5 @@
-// Package middleware holds the HTTP middleware that wraps the API router:
-// panic recovery, request logging and CORS.
+// Package middleware holds the HTTP middleware that wraps the router: panic
+// recovery, request logging and CORS.
 package middleware
 
 import (
@@ -8,21 +8,15 @@ import (
 	"runtime/debug"
 )
 
-// internalErrorBody is the fixed JSON sent when a handler panics. It is written
-// here instead of reusing the handler package's helpers, which are private.
+// internalErrorBody is the fixed 500 body. The handler package's helpers are
+// private, so it is written here.
 const internalErrorBody = `{"error":"internal error"}`
 
-// Recover turns a panic in next into a 500 JSON response, so the client always
-// gets an answer instead of a dropped connection. The panic and its stack trace
-// are logged; nothing about them is sent to the client.
-//
-// If next already wrote part of the response before panicking, the status line
-// is already sent and cannot be changed; the 500 only takes effect otherwise.
+// Recover turns a panic in next into a JSON 500 and logs it with its stack
+// trace. If next had already started the response, the status can no longer
+// change.
 func Recover(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// A deferred function still runs when next panics. recover() returns the
-		// value passed to panic, or nil if there was no panic, and it only works
-		// when called directly from a deferred function.
 		defer func() {
 			if recovered := recover(); recovered != nil {
 				slog.Error("panic recovered",

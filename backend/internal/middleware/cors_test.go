@@ -10,8 +10,7 @@ import (
 
 const testOrigin = "http://localhost:5173"
 
-// trackedHandler is a handler that records whether it was called, to check that
-// a middleware did or did not pass the request on.
+// trackedHandler records whether it was called.
 type trackedHandler struct {
 	called bool
 }
@@ -85,8 +84,8 @@ func TestCORS_ActualRequest(t *testing.T) {
 	}
 }
 
-// TestCORS_PlainOptions checks that an OPTIONS request that is not a preflight
-// (no Access-Control-Request-Method) goes on to the next handler.
+// TestCORS_PlainOptions checks that an OPTIONS request without
+// Access-Control-Request-Method goes on to the next handler.
 func TestCORS_PlainOptions(t *testing.T) {
 	next := &trackedHandler{}
 	req := httptest.NewRequest(http.MethodOptions, "/add", nil)
@@ -98,8 +97,7 @@ func TestCORS_PlainOptions(t *testing.T) {
 	}
 }
 
-// TestCORS_UsesConfiguredOrigin checks that the allowed origin comes from the
-// argument and is not a fixed value.
+// TestCORS_UsesConfiguredOrigin checks that the origin comes from the argument.
 func TestCORS_UsesConfiguredOrigin(t *testing.T) {
 	tests := []string{testOrigin, "https://calculator.example.com"}
 

@@ -1,6 +1,5 @@
-// Package handler exposes the calculator operations over HTTP. It checks that
-// requests are well formed and turns results and errors into JSON responses.
-// The math itself, and its rules, live in the calculator package.
+// Package handler exposes the calculator over HTTP: it validates requests and
+// writes JSON responses. The math rules live in the calculator package.
 package handler
 
 import (
@@ -12,31 +11,26 @@ import (
 	"strings"
 )
 
-// maxBodyBytes is the largest request body we accept (1 MB). A request only
-// needs a few bytes, so anything bigger is a mistake or an attack.
+// maxBodyBytes caps the request body at 1 MB.
 const maxBodyBytes = 1 << 20
 
-// BinaryOp is any operation that takes two operands.
+// BinaryOp is an operation on two operands.
 type BinaryOp func(a, b float64) (float64, error)
 
-// UnaryOp is any operation that takes one operand.
+// UnaryOp is an operation on one operand.
 type UnaryOp func(a float64) (float64, error)
 
-// binaryRequest is the JSON body of an operation with two operands.
-// The fields are pointers so a missing field (nil) can be told apart
-// from a field sent as 0.
+// binaryRequest uses pointers to tell a missing field (nil) from 0.
 type binaryRequest struct {
 	A *float64 `json:"a"`
 	B *float64 `json:"b"`
 }
 
-// unaryRequest is the JSON body of an operation with one operand.
 type unaryRequest struct {
 	A *float64 `json:"a"`
 }
 
-// Operate returns a handler that reads a and b from the request body, applies
-// op to them and writes the result as JSON.
+// Operate returns a handler that applies op to the a and b of the request body.
 func Operate(op BinaryOp) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req binaryRequest
@@ -63,7 +57,7 @@ func Operate(op BinaryOp) http.HandlerFunc {
 	}
 }
 
-// OperateUnary is like [Operate], for operations with a single operand.
+// OperateUnary is like [Operate], for one operand.
 func OperateUnary(op UnaryOp) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req unaryRequest
@@ -86,11 +80,7 @@ func OperateUnary(op UnaryOp) http.HandlerFunc {
 	}
 }
 
-// decodeBody reads the JSON body of r into dst.
-//
-// The returned error is always safe to show to the client: its message says
-// what is wrong with the request (empty body, invalid JSON, unknown field,
-// wrong type, too large, or extra data after the JSON object).
+// decodeBody reads the JSON body into dst. Its errors are safe to show the client.
 func decodeBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 
@@ -101,8 +91,7 @@ func decodeBody(w http.ResponseWriter, r *http.Request, dst any) error {
 		return describeDecodeError(err)
 	}
 
-	// Decode reads only the first JSON value, so `{"a":1,"b":2} garbage` would
-	// be accepted. Reading again must hit the end of the body (io.EOF).
+	// Decode reads one value, so a second read must hit EOF or there is trailing data.
 	var extra any
 	if err := dec.Decode(&extra); !errors.Is(err, io.EOF) {
 		return errors.New("request body must contain a single JSON object")
@@ -111,9 +100,8 @@ func decodeBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	return nil
 }
 
-// describeDecodeError turns an error from the JSON decoder into a short message
-// for the client. The decoder's own messages mention Go internals (struct
-// names, types), which the client should not see.
+// describeDecodeError replaces the decoder's messages, which expose Go
+// internals, with short ones.
 func describeDecodeError(err error) error {
 	var typeErr *json.UnmarshalTypeError
 	var tooLarge *http.MaxBytesError
@@ -129,7 +117,7 @@ func describeDecodeError(err error) error {
 		}
 		return fmt.Errorf("field %s must be a valid number", typeErr.Field)
 	case strings.HasPrefix(err.Error(), "json: unknown field"):
-		// The decoder has no dedicated error type for this case, only the text.
+		// The decoder has no error type for this case, only text.
 		return errors.New(strings.TrimPrefix(err.Error(), "json: "))
 	default:
 		return errors.New("invalid JSON body")

@@ -11,8 +11,7 @@ import (
 
 const testOrigin = "http://localhost:5173"
 
-// captureLogs sends log output to the returned buffer for the duration of the
-// test, and restores the previous logger after.
+// captureLogs sends log output to the returned buffer for the test.
 func captureLogs(t *testing.T) *bytes.Buffer {
 	t.Helper()
 
@@ -24,7 +23,7 @@ func captureLogs(t *testing.T) *bytes.Buffer {
 	return &buf
 }
 
-// serve sends one request through newHandler and returns the recorded response.
+// serve sends one request through newHandler.
 func serve(origin string, req *http.Request) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
 	newHandler(origin).ServeHTTP(rec, req)
@@ -36,8 +35,7 @@ func post(path, body string) *http.Request {
 	return httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
 }
 
-// TestNewHandler_Preflight is the test that proves CORS sits outside the
-// router: the router has no OPTIONS routes and would answer 405.
+// TestNewHandler_Preflight proves CORS sits outside the router, which would reply 405.
 func TestNewHandler_Preflight(t *testing.T) {
 	captureLogs(t)
 
@@ -57,10 +55,8 @@ func TestNewHandler_Preflight(t *testing.T) {
 	}
 }
 
-// TestNewHandler_Responses checks that the API still works through the whole
-// chain, and that every kind of response, including errors, carries the CORS
-// header. Without it on errors, the browser would hide the error from the
-// frontend.
+// TestNewHandler_Responses checks the API through the whole chain. Errors must
+// carry the CORS header too, or the browser hides them from the frontend.
 func TestNewHandler_Responses(t *testing.T) {
 	captureLogs(t)
 
@@ -98,8 +94,7 @@ func TestNewHandler_Responses(t *testing.T) {
 	}
 }
 
-// TestNewHandler_UsesConfiguredOrigin checks that the origin passed to
-// newHandler is the one sent to the browser.
+// TestNewHandler_UsesConfiguredOrigin checks that the origin argument is the one sent.
 func TestNewHandler_UsesConfiguredOrigin(t *testing.T) {
 	captureLogs(t)
 
@@ -111,8 +106,7 @@ func TestNewHandler_UsesConfiguredOrigin(t *testing.T) {
 	}
 }
 
-// TestNewHandler_LogsRequests checks that the logging middleware is part of the
-// chain, and that it also sees preflight requests.
+// TestNewHandler_LogsRequests checks that Logging is part of the chain.
 func TestNewHandler_LogsRequests(t *testing.T) {
 	logs := captureLogs(t)
 

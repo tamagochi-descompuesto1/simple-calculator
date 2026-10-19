@@ -15,8 +15,8 @@ import (
 	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/calculator"
 )
 
-// silenceLogs discards log output for the duration of the test, so expected
-// error logs do not look like failures, and restores the previous logger after.
+// silenceLogs mutes the logger for the test, so expected error logs do not
+// look like failures.
 func silenceLogs(t *testing.T) {
 	t.Helper()
 
@@ -34,7 +34,7 @@ func TestWriteJSON(t *testing.T) {
 	}{
 		{name: "int success", status: http.StatusOK, body: successBody{Result: 30}, want: `{"result":30}`},
 		{name: "float success", status: http.StatusOK, body: successBody{Result: 1.3993}, want: `{"result":1.3993}`},
-		// Regression: a result of 0 must not be dropped from the body (no omitempty).
+		// Regression: a result of 0 must not be omitted.
 		{name: "zero success", status: http.StatusOK, body: successBody{Result: 0}, want: `{"result":0}`},
 		{name: "negative success", status: http.StatusOK, body: successBody{Result: -5}, want: `{"result":-5}`},
 		{name: "domain error", status: http.StatusUnprocessableEntity, body: errorBody{Error: "division by zero"}, want: `{"error":"division by zero"}`},
@@ -72,7 +72,7 @@ func TestWriteError(t *testing.T) {
 		{name: "bad request", status: http.StatusBadRequest, msg: "invalid JSON body", want: `{"error":"invalid JSON body"}`},
 		{name: "domain error", status: http.StatusUnprocessableEntity, msg: "division by zero", want: `{"error":"division by zero"}`},
 		{name: "internal error", status: http.StatusInternalServerError, msg: "internal error", want: `{"error":"internal error"}`},
-		// The encoder must escape quotes; building the JSON by hand would break here.
+		// The encoder must escape quotes.
 		{name: "message with quotes", status: http.StatusBadRequest, msg: `field "a" is required`, want: `{"error":"field \"a\" is required"}`},
 	}
 
@@ -97,10 +97,9 @@ func TestWriteError(t *testing.T) {
 	}
 }
 
-// TestWriteJSON_EncodeFailure covers the case where the value cannot be
-// serialized. NaN is not valid JSON, which is what calculator.checkResult
-// protects against. The status line is already sent when encoding fails, so
-// the client sees the requested status with an empty body.
+// TestWriteJSON_EncodeFailure covers a value that cannot be encoded (NaN, which
+// calculator.checkResult prevents). The status is already sent, so the body
+// stays empty.
 func TestWriteJSON_EncodeFailure(t *testing.T) {
 	silenceLogs(t)
 
@@ -129,7 +128,7 @@ func TestWriteOperationError(t *testing.T) {
 		{name: "negative sqrt", err: calculator.ErrNegativeSqrt, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrNegativeSqrt.Error()},
 		{name: "overflow", err: calculator.ErrOverflow, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrOverflow.Error()},
 		{name: "undefined", err: calculator.ErrUndefined, wantStatus: http.StatusUnprocessableEntity, wantMsg: calculator.ErrUndefined.Error()},
-		// errors.Is must see through wrapping; comparing with == would fall to the 500 here.
+		// errors.Is must see through wrapping.
 		{name: "wrapped sentinel", err: fmt.Errorf("divide failed: %w", calculator.ErrDivisionByZero), wantStatus: http.StatusUnprocessableEntity, wantMsg: "divide failed: division by zero"},
 		// The original message ("boom") must never reach the client.
 		{name: "unknown error", err: errors.New("boom"), wantStatus: http.StatusInternalServerError, wantMsg: "internal error"},
@@ -155,9 +154,7 @@ func TestWriteOperationError(t *testing.T) {
 	}
 }
 
-// TestOperationErrorsTable guards the table itself: every row must carry a real
-// error and a status in the 4xx range, so a typo cannot silently turn a domain
-// error into a 500 or a success.
+// TestOperationErrorsTable checks that every row has an error and a 4xx status.
 func TestOperationErrorsTable(t *testing.T) {
 	for _, row := range operationErrors {
 		if row.err == nil {
@@ -169,7 +166,7 @@ func TestOperationErrorsTable(t *testing.T) {
 	}
 }
 
-// serve sends a POST request with the given body to h and returns the response.
+// serve sends a POST with the given body to h.
 func serve(h http.Handler, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -209,7 +206,7 @@ func TestOperate(t *testing.T) {
 		{name: "missing a", op: calculator.Add, body: `{"b":3}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: a"}`},
 		{name: "missing b", op: calculator.Add, body: `{"a":3}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: b"}`},
 		{name: "unknown field", op: calculator.Add, body: `{"a":1,"b":2,"c":3}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"unknown field \"c\""}`},
-		// encoding/json matches field names ignoring case; this documents that behavior.
+		// encoding/json ignores case in field names.
 		{name: "field names ignore case", op: calculator.Add, body: `{"A":1,"B":2}`, wantStatus: http.StatusOK, wantBody: `{"result":3}`},
 		{name: "string instead of number", op: calculator.Add, body: `{"a":"hello","b":2}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"field a must be a valid number"}`},
 		{name: "number as string", op: calculator.Add, body: `{"a":"5","b":2}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"field a must be a valid number"}`},
@@ -267,8 +264,8 @@ func TestOperateUnary(t *testing.T) {
 	}
 }
 
-// TestOperate_UsesOperands checks that a and b reach the operation in the right
-// order, which a commutative operation like Add cannot show.
+// TestOperate_UsesOperands checks that a and b reach the operation in order,
+// which Add cannot show.
 func TestOperate_UsesOperands(t *testing.T) {
 	rec := serve(Operate(calculator.Subtract), `{"a":10,"b":3}`)
 
@@ -277,7 +274,7 @@ func TestOperate_UsesOperands(t *testing.T) {
 	}
 }
 
-// abbreviate shortens very long test bodies so failure messages stay readable.
+// abbreviate shortens long bodies in failure messages.
 func abbreviate(s string) string {
 	if len(s) > 40 {
 		return s[:40] + "..."

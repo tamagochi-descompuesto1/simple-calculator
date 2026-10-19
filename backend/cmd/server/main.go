@@ -15,12 +15,10 @@ import (
 	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/middleware"
 )
 
-// shutdownTimeout is how long in-flight requests get to finish once the server
-// is told to stop.
+// shutdownTimeout is how long in-flight requests get to finish on shutdown.
 const shutdownTimeout = 10 * time.Second
 
-// getenv returns the value of the environment variable key, or fallback if the
-// variable is not set or is empty.
+// getenv returns the variable key, or fallback if it is unset or empty.
 func getenv(key, fallback string) string {
 	v := os.Getenv(key)
 
@@ -31,27 +29,20 @@ func getenv(key, fallback string) string {
 	return v
 }
 
-// initializeServer starts the server and sends the error that stops it to
-// serverChannel. ListenAndServe blocks until the server stops, so this function
-// is meant to run in its own goroutine.
+// initializeServer runs the server and sends the error that stops it to
+// serverChannel. ListenAndServe blocks, so call this in a goroutine.
 func initializeServer(server *http.Server, serverChannel chan error) {
 	err := server.ListenAndServe()
 
 	serverChannel <- err
 }
 
-// newHandler builds the full HTTP handler: the API router wrapped in the
-// middleware. It lives in its own function so tests can exercise the exact
-// same chain that the server runs.
+// newHandler wraps the router in the middleware. It is a function so tests run
+// the same chain as the server.
 //
-// Each step wraps the previous one, so the last one added is the outermost and
-// sees the request first. The resulting order of a request is:
-//
-//	Logging -> Recover -> CORS -> router
-//
-// Logging is outermost so it also records the 500 that Recover produces, and
-// CORS sits just outside the router so it can answer preflight requests (which
-// the router would reject with 405) before they reach it.
+// A request goes through Logging, Recover, CORS and then the router. Logging is
+// outermost so it records the 500 that Recover produces, and CORS answers
+// preflight requests before the router rejects them with 405.
 func newHandler(allowedOrigin string) http.Handler {
 	h := handler.NewRouter()
 	h = middleware.CORS(allowedOrigin)(h)
@@ -61,9 +52,8 @@ func newHandler(allowedOrigin string) http.Handler {
 	return h
 }
 
-// main runs the server and turns a failure into a non-zero exit code. It is
-// kept this small on purpose: os.Exit skips deferred calls, so all the work
-// (and its defers) lives in run, which returns before main exits.
+// main exits with a non-zero code on failure. The work is in run because
+// os.Exit skips deferred calls.
 func main() {
 	if err := run(); err != nil {
 		slog.Error("server error", "error", err)
@@ -71,53 +61,46 @@ func main() {
 	}
 }
 
-// run configures and starts the HTTP server, then blocks until the server fails
-// or a stop signal (Ctrl+C, or SIGTERM from `docker stop`) arrives. On a signal
-// it shuts the server down gracefully and returns nil. All routing lives in
-// handler.NewRouter; this function only deals with configuration and lifecycle.
+// run starts the server and blocks until it fails or a stop signal arrives,
+// then shuts down gracefully.
 func run() error {
 	port := getenv("PORT", "8080")
 
-	// The origin of the frontend, which the browser is allowed to call the API
-	// from. The default is the address of the Vite development server.
+	// The frontend's origin. The default is the Vite development server.
 	allowedOrigin := getenv("CORS_ALLOWED_ORIGIN", "http://localhost:5173")
 
-	// ctx is cancelled when the process receives one of the stop signals.
+	// Cancelled on Ctrl+C or SIGTERM (docker stop).
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Buffer of 1 so the server goroutine can always deliver its error and exit,
-	// even if nobody is reading anymore.
+	// Buffered so the server goroutine can always deliver its error and exit.
 	serverChannel := make(chan error, 1)
 
 	server := &http.Server{
-		// ":8080" (no host) listens on every network interface, which is
-		// required for the server to be reachable from outside a container.
+		// No host: listen on all interfaces, which a container needs.
 		Addr:    ":" + port,
 		Handler: newHandler(allowedOrigin),
 
-		// Timeouts stop slow or stalled clients from holding connections open
-		// forever. Requests and responses here are tiny, so these are generous.
-		ReadHeaderTimeout: 5 * time.Second,   // time to receive the request headers
-		ReadTimeout:       10 * time.Second,  // time to receive the whole request
-		WriteTimeout:      10 * time.Second,  // time to send the response
-		IdleTimeout:       120 * time.Second, // how long an idle keep-alive connection stays open
-		MaxHeaderBytes:    1 << 20,           // 1 MB cap on the request headers
+		// Timeouts so slow clients cannot hold connections open.
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	slog.Info("server starting", "port", port, "cors_origin", allowedOrigin)
 	go initializeServer(server, serverChannel)
 
-	// Wait for whichever happens first: the server fails, or we are told to stop.
 	select {
 	case err := <-serverChannel:
-		// The server stopped on its own (for example, the port is already in use).
+		// The server failed on its own, e.g. the port is already in use.
 		return err
 	case <-ctx.Done():
-		// Stop listening for signals so a second Ctrl+C kills the process at once.
+		// Restore default signal handling so a second Ctrl+C exits at once.
 		stop()
 
-		// Stop accepting new connections and give in-flight requests time to finish.
+		// Stop accepting connections and let in-flight requests finish.
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 

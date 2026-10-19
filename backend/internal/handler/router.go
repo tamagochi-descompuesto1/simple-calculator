@@ -6,9 +6,8 @@ import (
 	"github.com/tamagochi-descompuesto1/simple-calculator/backend/internal/calculator"
 )
 
-// NewRouter returns the HTTP handler for the whole API: one POST route per
-// calculator operation, plus GET /health. Requests to unknown routes or with
-// the wrong method are answered by the router itself (404 and 405, plain text).
+// NewRouter returns the API routes. The router itself answers unknown routes
+// and wrong methods (404 and 405), in plain text.
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
 
@@ -25,8 +24,6 @@ func NewRouter() http.Handler {
 	return mux
 }
 
-// health reports that the server is up. It takes no input and has no state, so
-// it is a plain handler function instead of one built by a constructor.
 func health(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, healthBody{Status: "ok"})
 }

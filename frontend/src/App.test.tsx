@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 
 // The theme lives in localStorage and on <html>, so each test starts clean.
-// The default matchMedia from the test setup reports a light system theme.
+// The setup's default matchMedia reports a light system theme.
 beforeEach(() => {
   localStorage.clear()
 })
@@ -54,7 +54,7 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
-  // Rendering App again stands in for reloading the page.
+  // Rendering again stands in for a reload.
   it('remembers the chosen theme after a reload', async () => {
     const user = userEvent.setup()
     const { unmount } = render(<App />)

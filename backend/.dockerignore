@@ -1,5 +1,3 @@
-# Files that must not be copied into the image: they are local artifacts, or
-# irrelevant to the build.
 coverage.out
 *.test
 Dockerfile

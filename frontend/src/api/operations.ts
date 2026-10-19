@@ -1,9 +1,6 @@
-// Every operation the calculator offers. The UI builds its selector from this
-// list, and the API client uses it for the type of valid operations, so adding an
-// operation starts here. Each id must match the backend route (POST /<id>), and
-// unary marks operations that take a single operand. fields holds the labels of
-// the inputs, named after what each number means when the order is not obvious
-// (the base and the exponent, the amount and the percent).
+// Every operation the calculator offers. The UI and the API client are built
+// from it, so adding one starts here. id is the backend route (POST /<id>),
+// unary marks one-operand operations, and fields are the input labels.
 export const OPERATIONS = [
   {
     id: 'add',
@@ -56,6 +53,5 @@ export const OPERATIONS = [
   },
 ] as const
 
-// The union of all ids ('add' | 'subtract' | ...), derived from the list above so
-// the two can never get out of sync.
+// The union of all ids, derived so it cannot drift from the list.
 export type OperationId = (typeof OPERATIONS)[number]['id']

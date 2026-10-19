@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { formatResult, parseNumber } from './numbers'
 
 describe('parseNumber', () => {
-  // Each row is [text typed by the user, expected number].
+  // [typed text, expected number]
   it.each([
     ['5', 5],
     ['-5', -5],
@@ -10,14 +10,14 @@ describe('parseNumber', () => {
     ['0', 0],
     ['007', 7],
     ['.5', 0.5],
-    // A trailing point is a normal state while typing.
+    // A trailing point is normal while typing.
     ['5.', 5],
     ['  7  ', 7],
   ])('parses %s', (text, expected) => {
     expect(parseNumber(text)).toBe(expected)
   })
 
-  // Each row is [description (only used in the test name), text].
+  // [description for the test name, text]
   it.each([
     ['an empty string', ''],
     ['only spaces', '  '],
@@ -34,7 +34,7 @@ describe('parseNumber', () => {
     ['two decimal points', '1.2.3'],
     ['Infinity', 'Infinity'],
     ['NaN', 'NaN'],
-    // Matches the pattern, but is too large to be a finite number.
+    // Matches the pattern but overflows to Infinity.
     ['digits beyond the range of a number', '9'.repeat(400)],
   ])('rejects %s', (_description, text) => {
     expect(parseNumber(text)).toBeNull()
@@ -42,9 +42,9 @@ describe('parseNumber', () => {
 })
 
 describe('formatResult', () => {
-  // Each row is [value, expected text].
+  // [value, expected text]
   it.each([
-    // Floating-point noise is removed.
+    // Float noise is removed.
     [0.1 + 0.2, '0.3'],
     [1.1 * 1.1, '1.21'],
     [1 / 3, '0.333333333333333'],
@@ -54,10 +54,10 @@ describe('formatResult', () => {
     [1.3993, '1.3993'],
     // Exact integers up to 15 digits are not cut off.
     [123456789012345, '123456789012345'],
-    // JavaScript switches to exponent notation for very large and small values.
+    // JavaScript uses exponent notation for very large and small values.
     [1e21, '1e+21'],
     [1e-7, '1e-7'],
-    // Negative zero is shown as plain zero.
+    // Negative zero shows as 0.
     [-0, '0'],
   ])('formats %s as %s', (value, expected) => {
     expect(formatResult(value)).toBe(expected)

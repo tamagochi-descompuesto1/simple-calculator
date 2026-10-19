@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Follow the system color scheme, unless data-theme forces one. */
+/* Follow the system theme unless data-theme forces one. */
 :root {
   color-scheme: light dark;
 }
@@ -12,7 +12,7 @@
 }
 
 :root {
-  /* Brand colors: the same in both themes. */
+  /* Brand colors, the same in both themes. */
   --brand-light: #5b8def;
   --brand: #2a5cdb;
   --brand-dark: #1a3f9e;
@@ -20,7 +20,7 @@
   --danger-dark: #e14b2a;
   --success: #3ddc84;
 
-  /* Surfaces and text: light-dark(value in light theme, value in dark theme). */
+  /* light-dark(light value, dark value). */
   --cream: light-dark(#f5f3ee, #10112b);
   --cream-dim: light-dark(#eae6db, #171935);
   --paper: light-dark(#ffffff, #1b1d3b);
@@ -36,7 +36,7 @@
   --window-shadow-color: light-dark(rgb(26 27 46 / 0.3), rgb(0 0 0 / 0.55));
 }
 
-/* Makes the tokens available as Tailwind classes (bg-paper, text-ink, ...). */
+/* Exposes the tokens as Tailwind classes (bg-paper, text-ink, ...). */
 @theme inline {
   --color-brand-light: var(--brand-light);
   --color-brand: var(--brand);
