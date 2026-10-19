@@ -1,15 +1,15 @@
 version: "2"
 
 linters:
-  # Besides the default set (errcheck, govet, ineffassign, staticcheck, unused):
+  # On top of the defaults:
   enable:
-    - revive     # style rules: doc comments, early returns, naming
-    - errorlint  # errors.Is / errors.As instead of == and type assertions
-    - gosec      # common security mistakes
-    - misspell   # typos in comments and strings
+    - revive # doc comments, early returns, naming
+    - errorlint # errors.Is / errors.As instead of == and type assertions
+    - gosec # common security mistakes
+    - misspell
   exclusions:
     presets:
-      - std-error-handling # ignore unchecked errors from calls like Close()
+      - std-error-handling # unchecked errors from calls like Close()
 
 formatters:
   enable:

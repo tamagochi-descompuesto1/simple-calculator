@@ -7,9 +7,8 @@ import (
 	"testing"
 )
 
-// assertResult fails the test if err does not match wantErr, or if got is not
-// within a small relative tolerance of want. Exact float equality is too strict
-// for results such as 54.2 + 31.6, which is 85.80000000000001 in float64.
+// assertResult compares with a relative tolerance: exact equality fails on
+// results like 54.2 + 31.6, which is 85.80000000000001.
 func assertResult(t *testing.T, call string, got float64, err error, want float64, wantErr error) {
 	t.Helper()
 
@@ -154,7 +153,7 @@ func TestPower(t *testing.T) {
 		{name: "negative base fractional exponent", a: -8, b: 0.5, wantErr: ErrUndefined},
 		{name: "positive overflow", a: 10, b: 400, wantErr: ErrOverflow},
 		{name: "negative overflow", a: -10, b: 401, wantErr: ErrOverflow},
-		// Results too small to represent round to 0 (underflow); that is not an error.
+		// Underflow rounds to 0; it is not an error.
 		{name: "underflow rounds to zero", a: 10, b: -400, want: 0},
 	}
 
@@ -207,7 +206,7 @@ func TestPercentage(t *testing.T) {
 		{name: "percent of zero", a: 0, b: 50, want: 0},
 		{name: "negative percent", a: 50, b: -10, want: -5},
 		{name: "negative amount", a: -200, b: 15, want: -30},
-		// Regression: computing (a*b)/100 overflowed here even though the result fits.
+		// Regression: (a*b)/100 overflowed here even though the result fits.
 		{name: "large amount without intermediate overflow", a: 1e308, b: 50, want: 5e307},
 		{name: "overflow", a: 1e308, b: 1000, wantErr: ErrOverflow},
 	}

@@ -5,22 +5,20 @@ import { formatResult, parseNumber } from '../lib/numbers'
 import { NumberField } from './NumberField'
 import { OperationPicker } from './OperationPicker'
 
-// What the result panel shows: nothing yet, a result, or an error message.
+// What the result panel shows.
 type Outcome =
   { kind: 'result'; text: string } | { kind: 'error'; message: string } | null
 
 const INVALID_NUMBER_MESSAGE = 'Enter a valid number'
 const UNEXPECTED_ERROR_MESSAGE = 'Something went wrong'
 
-// The numbers an operation is run with. b is missing for operations with a
-// single operand.
+// b is missing for one-operand operations.
 interface Operands {
   a: number
   b?: number
 }
 
-// Writes the calculation the way a person would read it, with the numbers
-// formatted like the result ("007" is shown as 7).
+// Writes the calculation as a person would read it, with formatted numbers.
 function formatCalculation(
   operationId: OperationId,
   symbol: string,
@@ -46,20 +44,19 @@ function formatCalculation(
 
 export function Calculator() {
   const [operationId, setOperationId] = useState<OperationId>('add')
-  // The numbers stay as the text the user typed; they are parsed on every
-  // render instead of being stored twice.
+  // Kept as typed text and parsed on every render, instead of stored twice.
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [outcome, setOutcome] = useState<Outcome>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  // operationId always comes from OPERATIONS, so the operation always exists.
+  // operationId comes from OPERATIONS, so it always exists.
   const operation = OPERATIONS.find((op) => op.id === operationId)!
 
   const parsedA = parseNumber(a)
   const parsedB = operation.unary ? null : parseNumber(b)
 
-  // The operands to send, or null while the inputs are not valid yet.
+  // The operands to send, or null while the inputs are invalid.
   let operands: Operands | null = null
   if (parsedA !== null) {
     if (operation.unary) {
@@ -69,7 +66,7 @@ export function Calculator() {
     }
   }
 
-  // An empty field is not an error yet; the button is just disabled.
+  // An empty field is no error yet; the button is just disabled.
   const errorA =
     a !== '' && parsedA === null ? INVALID_NUMBER_MESSAGE : undefined
   const errorB =
@@ -77,7 +74,7 @@ export function Calculator() {
       ? INVALID_NUMBER_MESSAGE
       : undefined
 
-  // Any change makes the shown result stale, so it is cleared.
+  // Any change makes the shown result stale.
   function handleOperationChange(id: OperationId) {
     setOperationId(id)
     setOutcome(null)

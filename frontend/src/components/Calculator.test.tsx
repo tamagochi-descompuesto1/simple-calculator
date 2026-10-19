@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, calculate } from '../api/apiClient'
 import { Calculator } from './Calculator'
 
-// Replace only the network call; ApiError stays real, since the component
-// checks for it.
+// Only the network call is replaced; ApiError stays real, the component checks it.
 vi.mock('../api/apiClient', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/apiClient')>()
   return { ...actual, calculate: vi.fn() }
@@ -17,7 +16,6 @@ beforeEach(() => {
   calculateMock.mockReset()
 })
 
-// Small helpers so the tests read as what the user does.
 async function selectOperation(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
@@ -69,7 +67,7 @@ describe('Calculator', () => {
       expect(calculateButton()).toBeDisabled()
     })
 
-    // A calculation is read in this order: number, operation, number.
+    // A calculation reads number, operation, number.
     it('lays out the first number, the operation and the second number in order', () => {
       render(<Calculator />)
 
@@ -85,7 +83,7 @@ describe('Calculator', () => {
       )
     })
 
-    // Operations whose numbers are not interchangeable name them by meaning.
+    // Fields are named by meaning where the order matters.
     it.each([
       ['Power', 'Base', 'Exponent'],
       ['Percentage', 'Amount', 'Percent'],
@@ -213,9 +211,8 @@ describe('Calculator', () => {
       expect(await screen.findByRole('status')).toHaveTextContent('6 + 3 = 9')
     })
 
-    // The browser already refuses to submit through a disabled button, so these
-    // two tests send the submit event straight to the form to check that the
-    // component guards against it too.
+    // Browsers refuse to submit through a disabled button, so these tests submit
+    // the form directly to check the component guards against it too.
     it('does not calculate if submitted with invalid numbers', async () => {
       const user = userEvent.setup()
       const { container } = render(<Calculator />)
@@ -224,7 +221,7 @@ describe('Calculator', () => {
       fireEvent.submit(container.querySelector('form')!)
 
       expect(calculateMock).not.toHaveBeenCalled()
-      // Nothing happened at all, not even an error message.
+      // Not even an error message.
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
 

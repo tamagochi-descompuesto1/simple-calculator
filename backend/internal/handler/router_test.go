@@ -8,8 +8,7 @@ import (
 	"testing"
 )
 
-// send makes a real HTTP request to the test server and returns the response
-// together with its body as text.
+// send makes a real HTTP request to srv and returns the response and its body.
 func send(t *testing.T, srv *httptest.Server, method, path, body string) (*http.Response, string) {
 	t.Helper()
 
@@ -32,9 +31,8 @@ func send(t *testing.T, srv *httptest.Server, method, path, body string) (*http.
 	return resp, strings.TrimSpace(string(data))
 }
 
-// TestRouter sends real requests through the router. Each operation route gets
-// operands for which every other operation would give a different result, so a
-// route wired to the wrong operation makes the test fail.
+// TestRouter sends real requests through the router. The operands make every
+// operation give a different result, so a route wired to the wrong one fails.
 func TestRouter(t *testing.T) {
 	srv := httptest.NewServer(NewRouter())
 	t.Cleanup(srv.Close)
@@ -56,7 +54,7 @@ func TestRouter(t *testing.T) {
 		{name: "sqrt", method: http.MethodPost, path: "/sqrt", body: `{"a":16}`, wantStatus: http.StatusOK, wantBody: `{"result":4}`},
 		{name: "health", method: http.MethodGet, path: "/health", wantStatus: http.StatusOK, wantBody: `{"status":"ok"}`},
 
-		// Errors travel the whole way back as JSON.
+		// Errors come back as JSON too.
 		{name: "domain error", method: http.MethodPost, path: "/divide", body: `{"a":5,"b":0}`, wantStatus: http.StatusUnprocessableEntity, wantBody: `{"error":"division by zero"}`},
 		{name: "unary domain error", method: http.MethodPost, path: "/sqrt", body: `{"a":-4}`, wantStatus: http.StatusUnprocessableEntity, wantBody: `{"error":"square root of a negative number"}`},
 		{name: "malformed request", method: http.MethodPost, path: "/add", body: `{"a":1}`, wantStatus: http.StatusBadRequest, wantBody: `{"error":"missing field: b"}`},
@@ -81,8 +79,8 @@ func TestRouter(t *testing.T) {
 	}
 }
 
-// TestRouter_UnmatchedRequests covers requests the router rejects by itself.
-// Only the status is checked: those responses are plain text, not JSON.
+// TestRouter_UnmatchedRequests covers what the router rejects itself. Only the
+// status is checked: those responses are plain text.
 func TestRouter_UnmatchedRequests(t *testing.T) {
 	srv := httptest.NewServer(NewRouter())
 	t.Cleanup(srv.Close)

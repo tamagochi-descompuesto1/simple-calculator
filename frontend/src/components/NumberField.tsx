@@ -2,8 +2,7 @@ import { useId } from 'react'
 
 interface NumberFieldProps {
   label: string
-  // The text as typed. It stays a string because states like "1." or "-" are
-  // normal while typing and are not numbers yet.
+  // The text as typed: "1." or "-" are normal while typing but not numbers.
   value: string
   onChange: (value: string) => void
   error?: string
@@ -15,7 +14,7 @@ export function NumberField({
   onChange,
   error,
 }: NumberFieldProps) {
-  // Unique id that ties the label and the error message to the input.
+  // Ties the label and the error to the input.
   const id = useId()
   const errorId = `${id}-error`
 

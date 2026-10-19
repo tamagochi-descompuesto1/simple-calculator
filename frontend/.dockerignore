@@ -1,9 +1,7 @@
-# Files that must not be copied into the image: local artifacts, installed
-# dependencies (npm ci installs them again), and local configuration that would
-# otherwise override the build argument.
 node_modules
 dist
 coverage
+# A local .env would override the VITE_API_URL build argument.
 .env
 .env.*
 !.env.example

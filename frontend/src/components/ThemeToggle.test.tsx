@@ -5,8 +5,7 @@ import type { Theme } from '../hooks/useTheme'
 import { ThemeToggle } from './ThemeToggle'
 
 describe('ThemeToggle', () => {
-  // Each row is [current theme, accessible name of the button]. The button
-  // always names the theme it switches to, not the current one.
+  // [current theme, button name]. The button names the theme it switches to.
   it.each<[Theme, string]>([
     ['light', 'Switch to dark theme'],
     ['dark', 'Switch to light theme'],
@@ -31,7 +30,7 @@ describe('ThemeToggle', () => {
     expect(onToggle).toHaveBeenCalledTimes(2)
   })
 
-  // The component only reports the click. Changing the theme is up to its parent.
+  // The component only reports the click; the parent changes the theme.
   it('does not call onToggle until it is clicked', () => {
     const onToggle = vi.fn()
 

@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// silenceLogs discards log output for the duration of the test, so expected
-// error logs do not look like failures, and restores the previous logger after.
+// silenceLogs mutes the logger for the test, so expected error logs do not
+// look like failures.
 func silenceLogs(t *testing.T) {
 	t.Helper()
 
@@ -39,7 +39,7 @@ func TestRecover_Panic(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/add", nil)
 
-			// If Recover fails to catch the panic, it reaches the test and fails it.
+			// An uncaught panic would fail the test.
 			Recover(panicking).ServeHTTP(rec, req)
 
 			if rec.Code != http.StatusInternalServerError {
@@ -82,8 +82,7 @@ func TestRecover_NoPanic(t *testing.T) {
 	}
 }
 
-// TestRecover_DoesNotLeakPanicValue checks that the panic message never reaches
-// the client, since it may contain internal details.
+// TestRecover_DoesNotLeakPanicValue checks that the panic message never reaches the client.
 func TestRecover_DoesNotLeakPanicValue(t *testing.T) {
 	silenceLogs(t)
 

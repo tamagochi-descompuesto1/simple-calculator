@@ -8,8 +8,8 @@ interface SuccessBody {
 }
 
 /**
- * An error from the calculator API. The message is safe to show to the user.
- * status is the HTTP status code, or undefined if no response was received.
+ * An error from the API. The message is safe to show. status is undefined when
+ * no response arrived.
  */
 export class ApiError extends Error {
   readonly status?: number
@@ -30,8 +30,8 @@ function isSuccessBody(data: unknown): data is SuccessBody {
   )
 }
 
-// The backend answers failures with {"error": "..."}, but some responses (such
-// as the router's 404 and 405) are plain text, so the body may not be JSON.
+// Failures are {"error": "..."}, but some responses (the router's 404 and 405)
+// are plain text.
 async function readErrorMessage(response: Response): Promise<string> {
   const data: unknown = await response.json().catch(() => null)
 
@@ -48,8 +48,8 @@ async function readErrorMessage(response: Response): Promise<string> {
 }
 
 /**
- * Runs an operation on the backend and returns its result. Operations with one
- * operand (such as sqrt) take only a. Rejects with an ApiError on any failure.
+ * Runs an operation on the backend. Rejects with an ApiError on any failure.
+ * b is omitted for one-operand operations.
  */
 export async function calculate(
   operation: OperationId,
@@ -58,7 +58,7 @@ export async function calculate(
 ): Promise<number> {
   const body = b === undefined ? { a } : { a, b }
 
-  // fetch only rejects when no response arrives at all (no network, server down).
+  // fetch rejects only when no response arrives.
   let response: Response
   try {
     response = await fetch(`${BASE_URL}/${operation}`, {
@@ -70,7 +70,7 @@ export async function calculate(
     throw new ApiError('Cannot reach the server')
   }
 
-  // A 4xx or 5xx is still a normal response to fetch, so it must be checked here.
+  // fetch does not reject on 4xx or 5xx.
   if (!response.ok) {
     throw new ApiError(await readErrorMessage(response), response.status)
   }
